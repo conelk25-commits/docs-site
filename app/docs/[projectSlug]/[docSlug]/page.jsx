@@ -2,21 +2,20 @@ import { createClient } from '@/lib/supabaseClient'
 import Link from 'next/link'
 
 export default async function DocViewer({ params }) {
-  // Await params to get docSlug properly
-  const { docSlug } = await params
+  const { slug } = await params
   const supabase = createClient()
 
   const { data: doc } = await supabase
     .from('documents')
     .select('*')
-    .eq('slug', docSlug)
+    .eq('slug', slug)
     .single()
 
   if (!doc) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400">
         <h1 className="text-2xl font-bold mb-4">404 - Document Not Found</h1>
-        <p className="text-sm text-slate-500 mb-4">Looking for slug: "{docSlug}"</p>
+        <p className="text-sm text-slate-500 mb-4">Looking for: "{slug}"</p>
         <Link href="/dashboard" className="text-indigo-400 hover:underline">Back to Dashboard</Link>
       </div>
     )
