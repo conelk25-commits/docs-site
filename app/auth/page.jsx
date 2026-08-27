@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { Auth } from '@supabase/auth-ui-react'
-import { ThemeSass } from '@supabase/auth-ui-shared'
+import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { createClient } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
@@ -26,7 +26,7 @@ export default function AuthPage() {
       
       <Auth
         supabaseClient={supabase}
-        appearance={{ theme: ThemeSass }}
+        appearance={{ theme: ThemeSupa }}
         theme="dark"
         providers={['github', 'google']}
         redirectTo={`${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard`}
