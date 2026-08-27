@@ -4,23 +4,16 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-50;
-    /* Prevents unwanted scrollbars during animations */
-    overflow-x: hidden; 
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 transition-colors duration-200;
   }
 }
 
-/* Custom scrollbar for a polished feel */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #020617; /* slate-950 */
+  @apply bg-slate-100 dark:bg-slate-950;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155; /* slate-700 */
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #475569; /* slate-600 */
+  @apply bg-slate-300 dark:bg-slate-700 rounded;
 }
