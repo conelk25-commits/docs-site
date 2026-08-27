@@ -1,42 +1,36 @@
-import { MDXRemote } from 'next-mdx-remote/rsc'
-import { createClient } from '@supabase/supabase-js'
-import { notFound } from 'next/navigation'
+import { createClient } from '@/lib/supabaseClient'
+import Link from 'next/link'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
-
-export default async function PublicDocPage({ params }) {
-  const { projectSlug, docSlug } = params
-
-  const { data: project } = await supabase
-    .from('projects')
-    .select('id, name')
-    .eq('slug', projectSlug)
-    .single()
-
-  if (!project) notFound()
+export default async function DocViewer({ params }) {
+  const { docSlug } = params
+  const supabase = createClient()
 
   const { data: doc } = await supabase
-    .from('docs_pages')
-    .select('title, content_mdx')
-    .eq('project_id', project.id)
+    .from('documents')
+    .select('*')
     .eq('slug', docSlug)
     .single()
 
-  if (!doc) notFound()
+  if (!doc) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400">
+        <h1 className="text-2xl font-bold mb-4">404 - Document Not Found</h1>
+        <Link href="/dashboard" className="text-indigo-400 hover:underline">Back to Dashboard</Link>
+      </div>
+    )
+  }
 
   return (
-    <main style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px', background: '#fff', borderRadius: '8px', border: '1px solid #eee', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-      <header style={{ borderBottom: '1px solid #eee', paddingBottom: '15px', paddingTop: '20px', marginBottom: '20px' }}>
-        <small style={{ color: '#0070f3', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{project.name}</small>
-        <h1 style={{ marginTop: '5px', marginBottom: 0 }}>{doc.title}</h1>
-      </header>
-
-      <article style={{ lineHeight: '1.7', color: '#333' }}>
-        <MDXRemote source={doc.content_mdx} />
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 max-w-4xl mx-auto">
+      <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white mb-6 inline-block">
+        ← Back to Dashboard
+      </Link>
+      <article className="prose prose-invert max-w-none">
+        <h1 className="text-4xl font-extrabold text-white mb-4">{doc.title}</h1>
+        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+          {doc.content || 'This document has no content yet.'}
+        </div>
       </article>
-    </main>
+    </div>
   )
 }
