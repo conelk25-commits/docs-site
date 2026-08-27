@@ -9,7 +9,10 @@ export default function Dashboard() {
   const [user, setUser] = useState(null)
   const [docs, setDocs] = useState([])
   const [newTitle, setNewTitle] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [editContent, setEditContent] = useState('')
   const [draggedIndex, setDraggedIndex] = useState(null)
+  
   const supabase = createClient()
   const router = useRouter()
 
@@ -44,12 +47,24 @@ export default function Dashboard() {
 
     const { data, error } = await supabase
       .from('documents')
-      .insert([{ title: newTitle, slug, position, user_id: user.id }])
+      .insert([{ title: newTitle, slug, position, user_id: user.id, content: '' }])
       .select()
 
     if (!error && data) {
       setDocs([...docs, data[0]])
       setNewTitle('')
+    }
+  }
+
+  const handleSaveContent = async (id) => {
+    const { error } = await supabase
+      .from('documents')
+      .update({ content: editContent })
+      .eq('id', id)
+
+    if (!error) {
+      setDocs(docs.map(doc => doc.id === id ? { ...doc, content: editContent } : doc))
+      setEditingId(null)
     }
   }
 
@@ -60,24 +75,19 @@ export default function Dashboard() {
     }
   }
 
-  // Drag and drop handlers
   const handleDragStart = (index) => setDraggedIndex(index)
-
   const handleDragOver = (e) => e.preventDefault()
-
+  
   const handleDrop = async (dropIndex) => {
     if (draggedIndex === null || draggedIndex === dropIndex) return
-
     const updatedDocs = [...docs]
     const [draggedItem] = updatedDocs.splice(draggedIndex, 1)
     updatedDocs.splice(dropIndex, 0, draggedItem)
 
-    // Update local positions
     const reordered = updatedDocs.map((doc, idx) => ({ ...doc, position: idx }))
     setDocs(reordered)
     setDraggedIndex(null)
 
-    // Sync positions to Supabase
     for (const item of reordered) {
       await supabase.from('documents').update({ position: item.position }).eq('id', item.id)
     }
@@ -97,22 +107,20 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Create New Doc Form */}
       <form onSubmit={handleCreateDoc} className="flex gap-3 mb-8">
         <input
           type="text"
           placeholder="New document title..."
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
-          className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+          className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-indigo-500"
         />
         <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2 rounded-lg">
           Add Doc
         </button>
       </form>
 
-      {/* Drag & Drop List */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {docs.map((doc, index) => (
           <div
             key={doc.id}
@@ -120,31 +128,59 @@ export default function Dashboard() {
             onDragStart={() => handleDragStart(index)}
             onDragOver={handleDragOver}
             onDrop={() => handleDrop(index)}
-            className="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-xl cursor-move hover:border-slate-700 transition-colors"
+            className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col gap-3"
           >
-            <div className="flex items-center gap-3">
-              <span className="text-slate-600 font-mono text-sm">⣿</span>
-              <Link 
-                href={`/docs/${doc.slug}`}
-                className="text-white font-medium hover:text-indigo-400 flex items-center gap-2 group"
-              >
-                {doc.title}
-                <span className="text-xs text-slate-500 group-hover:text-indigo-400">↗</span>
-              </Link>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-slate-600 font-mono text-sm cursor-move">⣿</span>
+                <Link 
+                  href={`/docs/${doc.slug}`}
+                  className="text-white font-medium hover:text-indigo-400 flex items-center gap-2"
+                >
+                  {doc.title}
+                  <span className="text-xs text-slate-500">↗</span>
+                </Link>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setEditingId(editingId === doc.id ? null : doc.id)
+                    setEditContent(doc.content || '')
+                  }}
+                  className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded border border-slate-700"
+                >
+                  {editingId === doc.id ? 'Cancel' : 'Edit Content'}
+                </button>
+                <button
+                  onClick={() => handleDeleteDoc(doc.id)}
+                  className="text-slate-500 hover:text-red-400 p-1 text-sm"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-            
-            <button
-              onClick={() => handleDeleteDoc(doc.id)}
-              className="text-slate-500 hover:text-red-400 p-1 text-sm transition-colors"
-              title="Delete Document"
-            >
-              ✕
-            </button>
+
+            {/* Editing Panel */}
+            {editingId === doc.id && (
+              <div className="mt-2 flex flex-col gap-2">
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  placeholder="Write document content..."
+                  rows={4}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+                <button
+                  onClick={() => handleSaveContent(doc.id)}
+                  className="self-end bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-4 py-2 rounded-lg"
+                >
+                  Save Changes
+                </button>
+              </div>
+            )}
           </div>
         ))}
-        {docs.length === 0 && (
-          <p className="text-center text-slate-500 py-8">No documents created yet.</p>
-        )}
       </div>
     </main>
   )
