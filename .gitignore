@@ -1,0 +1,17 @@
+# Dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+
+# Production & secret files
+build
+.DS_Store
+*.pem
+
+# Local environment files (DO NOT COMMIT SECRETS)
+.env*.local
+.env
